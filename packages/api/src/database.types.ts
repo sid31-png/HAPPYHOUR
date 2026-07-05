@@ -142,8 +142,166 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["partner_leads"]["Row"]>;
         Relationships: [];
       };
+      offers: {
+        Row: {
+          id: string;
+          venue_id: string;
+          happy_hour_id: string | null;
+          title: string;
+          description: string | null;
+          discount_label: string;
+          is_exclusive: boolean;
+          estimated_saving: number;
+          status: string;
+          last_verified_at: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["offers"]["Row"]>;
+        Update: Partial<Database["public"]["Tables"]["offers"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "offers_venue_id_fkey";
+            columns: ["venue_id"];
+            isOneToOne: false;
+            referencedRelation: "venues";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "offers_happy_hour_id_fkey";
+            columns: ["happy_hour_id"];
+            isOneToOne: false;
+            referencedRelation: "happy_hours";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      offer_redemptions: {
+        Row: {
+          id: string;
+          offer_id: string;
+          user_id: string;
+          code: string;
+          qr_payload: string;
+          activated_at: string;
+          expires_at: string;
+          redeemed_at: string | null;
+          saving_amount: number;
+        };
+        Insert: Partial<Database["public"]["Tables"]["offer_redemptions"]["Row"]> & {
+          offer_id: string;
+          user_id: string;
+          code: string;
+          qr_payload: string;
+          expires_at: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["offer_redemptions"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "offer_redemptions_offer_id_fkey";
+            columns: ["offer_id"];
+            isOneToOne: false;
+            referencedRelation: "offers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      offer_reports: {
+        Row: {
+          id: string;
+          offer_id: string;
+          user_id: string;
+          vote: string;
+          photo_url: string | null;
+          comment: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["offer_reports"]["Row"]> & {
+          offer_id: string;
+          user_id: string;
+          vote: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["offer_reports"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "offer_reports_offer_id_fkey";
+            columns: ["offer_id"];
+            isOneToOne: false;
+            referencedRelation: "offers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      group_plans: {
+        Row: {
+          id: string;
+          creator_id: string;
+          share_slug: string;
+          party_size: number;
+          budget_level: number;
+          area: string | null;
+          suggested_venue_ids: string[];
+          status: string;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["group_plans"]["Row"]> & {
+          creator_id: string;
+          share_slug: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["group_plans"]["Row"]>;
+        Relationships: [];
+      };
+      plan_votes: {
+        Row: {
+          id: string;
+          plan_id: string;
+          venue_id: string;
+          voter_name: string;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["plan_votes"]["Row"]> & {
+          plan_id: string;
+          venue_id: string;
+          voter_name: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["plan_votes"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "plan_votes_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "group_plans";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      check_ins: {
+        Row: {
+          user_id: string;
+          venue_id: string;
+          redemption_id: string | null;
+          district: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["check_ins"]["Row"]> & {
+          user_id: string;
+          venue_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["check_ins"]["Row"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      submit_offer_report: {
+        Args: {
+          p_offer_id: string;
+          p_user_id: string;
+          p_vote: string;
+          p_photo_url?: string | null;
+          p_comment?: string | null;
+        };
+        Returns: void;
+      };
+    };
   };
 }

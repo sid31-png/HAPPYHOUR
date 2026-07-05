@@ -6,6 +6,7 @@ import { colors, fonts, fontSizes } from "@happyhour/ui";
 import { SkyBackground } from "../src/components/SkyBackground";
 import { GlassSurface } from "../src/components/GlassSurface";
 import { CTAButton } from "../src/components/CTAButton";
+import { SavingsCard } from "../src/components/SavingsCard";
 import { useThemeSky } from "../src/theme/useThemeSky";
 import { useAuth } from "../src/lib/auth-context";
 
@@ -50,6 +51,10 @@ export default function ProfileScreen() {
             </View>
           </GlassSurface>
         )}
+
+        <View style={{ width: "100%", marginTop: 16 }}>
+          <SavingsCard />
+        </View>
 
         <CTAButton label="Se déconnecter" onPress={handleSignOut} style={{ marginTop: 24 }} />
       </View>

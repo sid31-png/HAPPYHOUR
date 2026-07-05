@@ -8,6 +8,12 @@ export type BookingStatus = "pending" | "confirmed" | "cancelled" | "completed";
 
 export type UserPreference = "bars" | "cafes" | "events" | "experiences";
 
+export type OfferStatus = "active" | "to_verify" | "paused";
+
+export type OfferVote = "up" | "down";
+
+export type GroupPlanStatus = "open" | "decided" | "cancelled";
+
 export interface Profile {
   id: string;
   display_name: string | null;
@@ -114,4 +120,84 @@ export interface LiveHappyHour extends HappyHour {
 export interface VenueWithDistance extends Venue {
   distance_km: number;
   live_happy_hour: HappyHour | null;
+}
+
+/** Offre exclusive déblocable in-app (mécanique 1, CLAUDE.md section 4). */
+export interface Offer {
+  id: string;
+  venue_id: string;
+  happy_hour_id: string | null;
+  title: string;
+  description: string | null;
+  discount_label: string;
+  is_exclusive: boolean;
+  estimated_saving: number;
+  status: OfferStatus;
+  last_verified_at: string | null;
+  created_at: string;
+}
+
+/** Activation d'une offre : code + QR valables 15 minutes. */
+export interface OfferRedemption {
+  id: string;
+  offer_id: string;
+  user_id: string;
+  code: string;
+  qr_payload: string;
+  activated_at: string;
+  expires_at: string;
+  redeemed_at: string | null;
+  saving_amount: number;
+}
+
+export interface OfferReport {
+  id: string;
+  offer_id: string;
+  user_id: string;
+  vote: OfferVote;
+  photo_url: string | null;
+  comment: string | null;
+  created_at: string;
+}
+
+export interface GroupPlan {
+  id: string;
+  creator_id: string;
+  share_slug: string;
+  party_size: number;
+  budget_level: number;
+  area: string | null;
+  suggested_venue_ids: string[];
+  status: GroupPlanStatus;
+  created_at: string;
+}
+
+export interface PlanVote {
+  id: string;
+  plan_id: string;
+  venue_id: string;
+  voter_name: string;
+  created_at: string;
+}
+
+export interface CheckIn {
+  user_id: string;
+  venue_id: string;
+  redemption_id: string | null;
+  district: string | null;
+  created_at: string;
+}
+
+/** Offre jointe à sa happy hour + son lieu, avec l'état "dernière chance" calculé. */
+export interface OfferWithContext extends Offer {
+  venue: Venue;
+  happy_hour: HappyHour | null;
+  minutes_remaining: number | null;
+  is_last_chance: boolean;
+  is_verified_this_week: boolean;
+}
+
+export interface SavingsSummary {
+  month_total: number;
+  all_time_total: number;
 }

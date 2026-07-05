@@ -5,8 +5,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import MapView, { Marker } from "react-native-maps";
-import { getFavoriteVenueIds, getVenueBySlug } from "@happyhour/api";
-import type { HappyHour, Venue } from "@happyhour/types";
+import { getFavoriteVenueIds, getOffersWithContext, getVenueBySlug } from "@happyhour/api";
+import type { HappyHour, OfferWithContext, Venue } from "@happyhour/types";
 import { colors, fonts, fontSizes, radii } from "@happyhour/ui";
 import { GlassSurface } from "../../src/components/GlassSurface";
 import { CountdownBadge } from "../../src/components/CountdownBadge";
@@ -14,6 +14,9 @@ import { CTAButton } from "../../src/components/CTAButton";
 import { FavoriteHeart } from "../../src/components/FavoriteHeart";
 import { EmptyState } from "../../src/components/EmptyState";
 import { LoadingState } from "../../src/components/LoadingState";
+import { VerifiedBadge } from "../../src/components/VerifiedBadge";
+import { OfferVoteButtons } from "../../src/components/OfferVoteButtons";
+import { OfferActivationSheet } from "../../src/components/OfferActivationSheet";
 import { useThemeSky } from "../../src/theme/useThemeSky";
 import { useLiveMinutesRemaining } from "../../src/hooks/useLiveMinutesRemaining";
 import { useAuth } from "../../src/lib/auth-context";
@@ -42,6 +45,8 @@ export default function VenueDetailScreen() {
 
   const [data, setData] = useState<{ venue: Venue; happyHours: HappyHour[] } | null | undefined>(undefined);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [offers, setOffers] = useState<OfferWithContext[]>([]);
+  const [activeOffer, setActiveOffer] = useState<OfferWithContext | null>(null);
 
   useEffect(() => {
     if (!slug) return;
@@ -50,7 +55,14 @@ export default function VenueDetailScreen() {
       setData(null);
       return;
     }
-    getVenueBySlug(client, slug).then(setData).catch(() => setData(null));
+    getVenueBySlug(client, slug).then((result) => {
+      setData(result);
+      if (result) {
+        getOffersWithContext(client).then((all) => {
+          setOffers(all.filter((offer) => offer.venue_id === result.venue.id));
+        });
+      }
+    }).catch(() => setData(null));
 
     if (session?.user) {
       getFavoriteVenueIds(client, session.user.id).then((ids) => {
@@ -130,6 +142,24 @@ export default function VenueDetailScreen() {
 
         {venue.description && <Text style={[styles.description, { color: textColor }]}>{venue.description}</Text>}
 
+        {offers.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: textColor }]}>Offre exclusive</Text>
+            {offers.map((offer) => (
+              <GlassSurface key={offer.id} shape="card" style={styles.offerCard}>
+                <View style={styles.offerContent}>
+                  <View style={{ flex: 1, gap: 4 }}>
+                    <Text style={[styles.scheduleTitle, { color: textColor }]}>{offer.discount_label}</Text>
+                    {offer.is_verified_this_week && <VerifiedBadge />}
+                    <OfferVoteButtons offerId={offer.id} />
+                  </View>
+                  <CTAButton label="Utiliser l'offre" onPress={() => setActiveOffer(offer)} />
+                </View>
+              </GlassSurface>
+            ))}
+          </View>
+        )}
+
         {happyHours.length > 0 && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: textColor }]}>Happy hours de la semaine</Text>
@@ -167,6 +197,8 @@ export default function VenueDetailScreen() {
 
         <CTAButton label="Réserver — bientôt disponible" disabled style={{ marginTop: 8 }} />
       </View>
+
+      <OfferActivationSheet offer={activeOffer} onClose={() => setActiveOffer(null)} />
     </ScrollView>
   );
 }
@@ -196,6 +228,8 @@ const styles = StyleSheet.create({
   description: { fontFamily: fonts.body, fontSize: fontSizes.body, lineHeight: 20, opacity: 0.9 },
   section: { gap: 10, marginTop: 8 },
   sectionTitle: { fontFamily: fonts.heading, fontSize: fontSizes.h2, fontWeight: "700" },
+  offerCard: { width: "100%" },
+  offerContent: { padding: 16, flexDirection: "row", alignItems: "center", gap: 12 },
   scheduleCard: { width: "100%" },
   scheduleContent: { padding: 14, gap: 2 },
   scheduleTitle: { fontFamily: fonts.heading, fontSize: fontSizes.cardTitle, fontWeight: "700" },

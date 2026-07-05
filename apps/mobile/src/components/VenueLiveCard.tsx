@@ -1,9 +1,11 @@
 import React from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-import type { LiveHappyHour } from "@happyhour/types";
-import { fonts, fontSizes, radii } from "@happyhour/ui";
+import type { LiveHappyHour, OfferWithContext } from "@happyhour/types";
+import { colors, fonts, fontSizes, radii } from "@happyhour/ui";
 import { GlassSurface } from "./GlassSurface";
 import { CountdownBadge } from "./CountdownBadge";
+import { VerifiedBadge } from "./VerifiedBadge";
+import { OfferVoteButtons } from "./OfferVoteButtons";
 import { useThemeSky } from "../theme/useThemeSky";
 import { useLiveMinutesRemaining } from "../hooks/useLiveMinutesRemaining";
 
@@ -14,8 +16,15 @@ const CATEGORY_LABELS: Record<string, string> = {
   restaurant: "Restaurant",
 };
 
+interface VenueLiveCardProps {
+  item: LiveHappyHour;
+  offer?: OfferWithContext | null;
+  onPress?: () => void;
+  onActivateOffer?: () => void;
+}
+
 /** Horizontal card for the "En cours près de vous" section — a venue currently in a live happy hour. */
-export function VenueLiveCard({ item, onPress }: { item: LiveHappyHour; onPress?: () => void }) {
+export function VenueLiveCard({ item, offer, onPress, onActivateOffer }: VenueLiveCardProps) {
   const { textColor } = useThemeSky();
   const minutes = useLiveMinutesRemaining(item.days_of_week, item.start_time, item.end_time);
   const photo = item.venue.photos[0];
@@ -42,6 +51,33 @@ export function VenueLiveCard({ item, onPress }: { item: LiveHappyHour; onPress?
           <Text style={[styles.meta, { color: textColor }]} numberOfLines={1}>
             {CATEGORY_LABELS[item.venue.category] ?? item.venue.category} · {item.title}
           </Text>
+
+          {offer && (
+            <>
+              {offer.is_verified_this_week && (
+                <View style={{ marginTop: 6 }}>
+                  <VerifiedBadge />
+                </View>
+              )}
+              <View style={styles.offerRow}>
+                <OfferVoteButtons offerId={offer.id} />
+              </View>
+              {onActivateOffer && (
+                <Pressable
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    onActivateOffer();
+                  }}
+                  hitSlop={6}
+                  accessibilityRole="button"
+                  accessibilityLabel="Utiliser l'offre"
+                  style={styles.activatePill}
+                >
+                  <Text style={styles.activateLabel}>Utiliser l'offre</Text>
+                </Pressable>
+              )}
+            </>
+          )}
         </View>
       </GlassSurface>
     </Pressable>
@@ -88,5 +124,22 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: fontSizes.meta,
     opacity: 0.8,
+  },
+  offerRow: { marginTop: 8 },
+  activatePill: {
+    marginTop: 8,
+    alignSelf: "flex-start",
+    borderRadius: 100,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    backgroundColor: "rgba(245,166,35,0.16)",
+    minHeight: 32,
+    justifyContent: "center",
+  },
+  activateLabel: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.nav,
+    fontWeight: "700",
+    color: colors.goldDeep,
   },
 });

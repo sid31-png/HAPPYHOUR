@@ -1,7 +1,7 @@
 # HAPPY HOUR — Dossier de démarrage Claude Code
 ## App mobile + Site web · Tout ce qu'il faut pour commencer
 
-> **Comment utiliser ce fichier** : crée un dossier `happyhour/`, copie ce fichier dedans sous le nom `CLAUDE.md`, ouvre Claude Code dans ce dossier, et lance les prompts de la section 9 dans l'ordre. Claude Code lira automatiquement ce fichier et connaîtra tout le projet.
+> **Comment utiliser ce fichier** : crée un dossier `happyhour/`, copie ce fichier dedans sous le nom `CLAUDE.md`, ouvre Claude Code dans ce dossier, et lance les prompts de la section 10 dans l'ordre. Claude Code lira automatiquement ce fichier et connaîtra tout le projet.
 
 ---
 
@@ -45,11 +45,37 @@ Boucle de données : chaque réservation améliore les recommandations → plus 
 
 ## 3.2 Site web — 2 rôles
 1. **Landing marketing** (happyhour.app) : présentation, screenshots, liste d'attente email, section partenaires "Ajoutez votre établissement"
-2. **Web app** (plus tard) : version navigateur de l'app + dashboard partenaires
+2. **Web app** (plus tard) : version navigateur de l'app + dashboard partenaires + pages publiques de vote "On va où ?" (section 4, mécanique 9)
 
 ---
 
-# 4. STACK TECHNIQUE
+# 4. MÉCANIQUES SIGNATURE
+
+Réponse produit à la question : pourquoi venir sur Happy Hour plutôt que rester sur Instagram, Google Maps, WhatsApp ou Snoonu ? Chaque mécanique doit créer une raison concrète d'ouvrir l'app plutôt qu'un autre canal.
+
+## Phase 1 — MVP
+
+1. **Déblocage d'offre in-app** : chaque offre exclusive s'active via un bouton "Utiliser l'offre" qui génère un code court + QR avec un timer de validité de 15 minutes, à montrer/scanner au serveur. L'offre n'est jamais utilisable sans passer par l'app. Chaque activation est enregistrée (traçabilité pour les lieux partenaires).
+2. **Compteur d'économies** : total des QAR économisés (mois + cumul) calculé depuis les offres utilisées, affiché dans le profil et sur l'écran d'accueil ("Tu as économisé 340 QAR ce mois-ci").
+3. **Section "Dernière chance"** : dans Explorer, rangée dédiée aux offres qui se terminent dans moins de 60 minutes, triées par fin la plus proche.
+4. **Règle des 3 taps** *(contrainte de design, voir section 7)* : parcours offre → réservation en 3 taps maximum, aucun formulaire, nombre de personnes en slider, horaire pré-rempli sur "maintenant" / "+1h".
+5. **Vérification communautaire** : sur chaque offre en cours, micro-action "C'est bien actif ? 👍/👎" sans quitter l'écran. 3 signalements négatifs en 24h → statut `to_verify` + notification au partenaire.
+6. **Badge "Vérifié cette semaine"** : affiché sur les lieux dont l'offre a été confirmée dans les 7 derniers jours (par le partenaire ou par ≥3 confirmations communautaires).
+
+## Phase 2
+
+7. **Rituel de 17h** : notification quotidienne intelligente entre 17h et 17h30 résumant ce qui est disponible ce soir près de l'utilisateur. Fréquence auto-adaptative : si l'utilisateur n'ouvre pas 3 notifications de suite, espacer (1 jour sur 2, puis hebdomadaire). Jamais de spam.
+8. **Radar géofencé** : géofences sur les lieux partenaires ; si l'utilisateur entre dans un rayon de 400 m d'un lieu dont la happy hour commence dans ≤20 min ou est en cours → push contextuel. Max 2 pushs radar par jour.
+9. **Mode groupe "On va où ?"** : créer un plan (taille du groupe, budget, zone), l'app propose 3 lieux, partage d'un lien web votable **sans installer l'app** (page Next.js publique dans apps/web), vote en un tap, le créateur réserve. Chaque page de vote a un CTA d'installation.
+10. **Garantie Happy Hour** : si une offre affichée est refusée sur place, signalement avec photo → crédit automatique (offre de compensation chez un partenaire). Workflow de modération simple dans le back-office.
+
+## Phase 3
+
+11. **Passeport & récap** : check-in automatique à chaque offre utilisée ; badges par quartier (5 lieux à The Pearl = badge + récompense partenaire) ; récap mensuel partageable façon Spotify Wrapped (lieux, économies, quartier favori) généré en image.
+
+---
+
+# 5. STACK TECHNIQUE
 
 Monorepo unique pour tout partager (types, logique, design tokens) :
 
@@ -73,12 +99,13 @@ happyhour/
 - **Web** : Next.js 14+ (App Router) + Tailwind CSS + TypeScript.
 - **Backend** : Supabase (Postgres + Auth + Storage + Realtime). Le Realtime est parfait pour les comptes à rebours des happy hours en direct.
 - **Cartes** : react-native-maps (mobile), Mapbox ou Google Maps (web).
+- **QR codes** : react-native-qrcode-svg (déblocage d'offre, mécanique 1).
 - **Paiement (Phase 2)** : Stripe.
 - **Monorepo** : npm workspaces + Turborepo.
 
 ---
 
-# 5. MODÈLE DE DONNÉES (Supabase / Postgres)
+# 6. MODÈLE DE DONNÉES (Supabase / Postgres)
 
 ```sql
 -- Utilisateurs (étend auth.users de Supabase)
@@ -166,45 +193,114 @@ subscriptions (
   status text,
   current_period_end timestamptz
 )
+
+-- Offres exclusives déblocables in-app (mécanique 1)
+offers (
+  id uuid PK,
+  venue_id uuid FK -> venues,
+  happy_hour_id uuid FK -> happy_hours NULL,
+  title text,
+  description text,
+  discount_label text,          -- "-50% cocktails"
+  is_exclusive boolean default true,
+  estimated_saving numeric,     -- QAR économisés par utilisation (alimente le compteur)
+  status text default 'active', -- 'active' | 'to_verify' | 'paused'
+  last_verified_at timestamptz  -- bascule le badge "Vérifié cette semaine" (mécanique 6)
+)
+
+-- Activations d'offre : code + QR + fenêtre de validité de 15 min (mécanique 1)
+offer_redemptions (
+  id uuid PK,
+  offer_id uuid FK -> offers,
+  user_id uuid FK -> profiles,
+  code text,
+  qr_payload text,
+  activated_at timestamptz,
+  expires_at timestamptz,       -- activated_at + 15 min
+  redeemed_at timestamptz NULL,
+  saving_amount numeric         -- copié depuis offers.estimated_saving à l'activation
+)
+
+-- Votes communautaires 👍/👎 sur une offre en cours (mécaniques 5 et 6)
+offer_reports (
+  id uuid PK,
+  offer_id uuid FK -> offers,
+  user_id uuid FK -> profiles,
+  vote text,                    -- 'up' | 'down'
+  photo_url text NULL,
+  comment text NULL,
+  created_at timestamptz
+)
+
+-- Plans de groupe "On va où ?" (mécanique 9, Phase 2)
+group_plans (
+  id uuid PK,
+  creator_id uuid FK -> profiles,
+  share_slug text unique,       -- utilisé par la page de vote publique sans compte
+  party_size int,
+  budget_level int,
+  area text,
+  suggested_venue_ids uuid[],
+  status text,
+  created_at timestamptz
+)
+
+-- Votes sur un plan de groupe, sans compte (mécanique 9, Phase 2)
+plan_votes (
+  id uuid PK,
+  plan_id uuid FK -> group_plans,
+  venue_id uuid FK -> venues,
+  voter_name text,
+  created_at timestamptz
+)
+
+-- Passeport : check-in à chaque offre utilisée (mécanique 11, Phase 3)
+check_ins (
+  user_id uuid FK -> profiles,
+  venue_id uuid FK -> venues,
+  redemption_id uuid FK -> offer_redemptions,
+  district text,
+  created_at timestamptz,
+  PK (user_id, venue_id, created_at)
+)
 ```
 
-Activer RLS (Row Level Security) sur toutes les tables. Seed : 15-20 lieux fictifs de Doha (West Bay, The Pearl, Msheireb, Katara) avec happy hours variés pour le développement.
+Activer RLS (Row Level Security) sur toutes les tables. Seed : 15-20 lieux fictifs de Doha (West Bay, The Pearl, Msheireb, Katara) avec happy hours variés pour le développement, plus une offre réaliste par happy hour (estimated_saving entre 30 et 120 QAR).
 
 ---
 
-# 6. DESIGN SYSTEM — "GOLDEN HOUR"
+# 7. DESIGN SYSTEM
 
-Concept : l'interface est un ciel de golden hour. Toutes les surfaces sont des panneaux de verre translucide (Apple liquid glass) qui laissent passer la lumière dorée. Doré, premium, vivant. Jamais de néon, jamais de blanc/noir pur, jamais de gris froid.
+Interface claire (blanc pur en mode clair, noir pur en mode sombre) avec des surfaces en verre dépoli (glassmorphism, façon Apple) et une typographie système (SF Pro sur iOS/Safari, Roboto sur Android). Une seule couleur d'accent (doré), utilisée avec parcimonie ; le vert "en direct" est un signal sémantique, pas une couleur de marque.
 
-## Ciels (fond des écrans, dégradés verticaux)
-- **Light (fin d'après-midi)** : `#FDEBD2 → #FBD9A8 → #F6B26B → #EE8C4E → #E2703F`
-- **Dark (crépuscule)** : `#1A1030 → #33184A → #7A2E4A → #C25A2E → #E8842F`
-- Halo solaire radial : blanc chaud → ambre → transparent. Haut (26 %) en light, bas (42 %) en dark.
+## Fonds d'écran
+- **Light** : blanc pur `#FFFFFF`.
+- **Dark** : noir pur `#000000`.
+- Aucun dégradé de fond, aucun halo décoratif — le fond est plat, la hiérarchie vient de la typographie et des surfaces en verre.
 
 ## Couleurs
 | Token | Hex |
 |---|---|
-| gold | #F5A623 |
+| gold (accent unique) | #F5A623 |
 | goldDeep | #E07B1F |
 | sunset | #E8642E |
 | amberLight | #FFC864 |
 | burgundy (accent secondaire, 1 usage max/écran) | #8E2157 |
-| textLight (mode light) | #3A2110 |
-| textDark (mode dark) | #FFF6E8 |
-| liveGreen (point "en direct") | #6EF09A |
+| textLight (mode light) | #1D1D1F |
+| textDark (mode dark) | #F5F5F7 |
+| liveGreen (point "en direct", sémantique) | #6EF09A |
 
 CTA : `linear-gradient(135deg, #FFAE3D, #E8642E)` + ombre `rgba(232,100,46,0.5)`. Un seul CTA plein par écran.
 
 ## Verre (toutes les surfaces : cartes, recherche, dock)
-- Light : `background rgba(255,251,244,0.42); border 1px solid rgba(255,255,255,0.65); backdrop-filter blur(26px) saturate(170%); inset 0 1px 0 rgba(255,255,255,0.85)`
-- Dark : `background rgba(255,240,220,0.08); border 1px solid rgba(255,220,180,0.18); même blur; inset 0 1px 0 rgba(255,230,190,0.16)`
+- Light : `background rgba(255,255,255,0.6); border 1px solid rgba(0,0,0,0.08); backdrop-filter blur(26px) saturate(170%); inset 0 1px 0 rgba(255,255,255,0.9)`
+- Dark : `background rgba(255,255,255,0.08); border 1px solid rgba(255,255,255,0.14); même blur; inset 0 1px 0 rgba(255,255,255,0.1)`
 - Radius : 24px cartes, 100px (pilule) pour recherche/dock/badges/boutons.
 - Sur mobile (React Native) : utiliser expo-blur (BlurView) pour l'effet verre.
 
 ## Typographie
-- Titres : **Alegreya Sans** (Google Fonts) 500/700/800 — équivalent libre de Jotia (Qatar Airways)
-- Texte : **Hanken Grotesk** (Google Fonts) 400-700 — équivalent libre de Graphik
-- Wordmark : `happyhour` minuscules, Alegreya Sans 800, "hour" en dégradé doré
+- Police système uniquement : `-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif` sur le web ; `undefined`/`"System"` en React Native (rend SF Pro sur iOS nativement, sans chargement de police).
+- Wordmark : `happyhour` minuscules, poids 800, "hour" en dégradé doré.
 - Tailles : wordmark 27, H2 19, titre carte 15, corps 14, méta 11.5, nav 10. Minimum absolu 10px.
 
 ## Composant signature : badge compte à rebours
@@ -213,6 +309,13 @@ Pilule de verre sur chaque vignette de lieu en happy hour : point vert pulsant (
 ## Navigation mobile
 Dock flottant en pilule de verre (détaché du bas, marge 22px), 4 onglets : **Explorer · Carte · Résas · Club**. Icônes outline 2px uniquement, jamais d'emoji. Onglet actif : accent doré + glow.
 
+## Règle des 3 taps (contrainte de design, mécanique 4)
+Tout parcours qui mène à une action de réservation ou d'activation doit tenir en 3 taps maximum depuis la carte d'offre :
+1. Tap sur l'offre → détail ou sheet d'activation.
+2. Réglage rapide si nécessaire (slider nombre de personnes, choix "maintenant" / "+1h" pré-rempli — jamais de formulaire libre).
+3. Tap de confirmation → code/QR généré ou réservation créée.
+Aucun écran intermédiaire, aucun champ texte obligatoire dans ce parcours.
+
 ## Divers
 - Langue UI : français. Devise : QAR.
 - Transitions : cubic-bezier(0.22,1,0.36,1) ; respecter prefers-reduced-motion.
@@ -220,10 +323,10 @@ Dock flottant en pilule de verre (détaché du bas, marge 22px), 4 onglets : **E
 
 ---
 
-# 7. SITE WEB (LANDING) — SPÉCIFICATION
+# 8. SITE WEB (LANDING) — SPÉCIFICATION
 
-Même design system Golden Hour. Sections dans l'ordre :
-1. **Hero** : ciel golden hour plein écran avec soleil, wordmark, tagline, mockup du téléphone en perspective 3D, champ email "Rejoindre la liste d'attente"
+Même design system (section 7). Sections dans l'ordre :
+1. **Hero** : fond blanc/noir plein écran, wordmark, tagline, mockup du téléphone en perspective 3D, champ email "Rejoindre la liste d'attente"
 2. **Le problème / la solution** : "Trouver où sortir ce soir ne devrait pas prendre 45 minutes"
 3. **Fonctionnalités** : 3 cartes de verre — Happy hours en direct / Tout réserver en un tap / Le Club
 4. **Comment ça marche** : 3 étapes
@@ -234,7 +337,7 @@ Formulaires branchés sur Supabase (tables `waitlist` et `partner_leads`). SEO d
 
 ---
 
-# 8. DÉMARRER AVEC CLAUDE CODE
+# 9. DÉMARRER AVEC CLAUDE CODE
 
 1. Installer Node.js 18+ puis Claude Code :
    ```bash
@@ -247,27 +350,27 @@ Formulaires branchés sur Supabase (tables `waitlist` et `partner_leads`). SEO d
    claude
    ```
 3. Claude Code lit `CLAUDE.md` automatiquement au démarrage — il connaîtra tout le contexte ci-dessus.
-4. Lancer les prompts de la section 9, un par un, dans l'ordre. Vérifier/tester après chaque étape avant de passer à la suivante.
+4. Lancer les prompts de la section 10, un par un, dans l'ordre. Vérifier/tester après chaque étape avant de passer à la suivante.
 
 Docs officielles : https://docs.claude.com/en/docs/claude-code/overview
 
 ---
 
-# 9. PROMPTS À LANCER DANS CLAUDE CODE (dans l'ordre)
+# 10. PROMPTS À LANCER DANS CLAUDE CODE (dans l'ordre)
 
 ## Prompt 1 — Fondations du monorepo
 ```
-Initialise le monorepo décrit dans CLAUDE.md section 4 : npm workspaces + Turborepo,
+Initialise le monorepo décrit dans CLAUDE.md section 5 : npm workspaces + Turborepo,
 apps/mobile (Expo + TypeScript + Expo Router), apps/web (Next.js App Router + Tailwind +
 TypeScript), packages/ui, packages/types, packages/api. Crée packages/types avec tous les
-types du modèle de données (section 5). Crée packages/ui avec les design tokens Golden Hour
-(section 6) exportés pour React Native ET pour Tailwind (tailwind preset). Ajoute les
+types du modèle de données (section 6). Crée packages/ui avec les design tokens
+(section 7) exportés pour React Native ET pour Tailwind (tailwind preset). Ajoute les
 scripts dev/build/lint à la racine. Vérifie que `npm run dev` lance bien les deux apps.
 ```
 
 ## Prompt 2 — Backend Supabase
 ```
-Configure Supabase : crée supabase/migrations avec tout le schéma SQL de la section 5
+Configure Supabase : crée supabase/migrations avec tout le schéma SQL de la section 6
 (profiles, venues, happy_hours, events, favorites, bookings, subscriptions + waitlist et
 partner_leads pour le site web), avec RLS activé et policies de base (lecture publique des
 venues/events/happy_hours, écriture réservée au propriétaire pour favorites/bookings).
@@ -281,9 +384,9 @@ getUpcomingEvents, toggleFavorite.
 ## Prompt 3 — Site web (landing)
 ```
 Construis la landing page dans apps/web en suivant exactement la spécification de la
-section 7 et le design system Golden Hour de la section 6 : fond ciel dégradé + halo
-solaire, panneaux liquid glass (backdrop-blur), polices Alegreya Sans + Hanken Grotesk
-via next/font, wordmark happyhour, mockup téléphone en perspective 3D dans le hero,
+section 8 et le design system de la section 7 : fond blanc/noir, panneaux liquid glass
+(backdrop-blur), police système via la pile -apple-system, wordmark happyhour, mockup
+téléphone en perspective 3D dans le hero,
 formulaires waitlist et partenaires branchés sur Supabase, dark mode automatique
 (prefers-color-scheme : ciel crépuscule), responsive mobile-first, SEO + Open Graph.
 Texte en français.
@@ -294,7 +397,7 @@ Texte en français.
 Dans apps/mobile, mets en place Expo Router avec le dock de navigation en pilule de verre
 (expo-blur) : Explorer, Carte, Résas, Club. Charge les polices Alegreya Sans et Hanken
 Grotesk (expo-font). Construis l'écran Explorer complet selon le design system : fond ciel
-golden hour (dégradé + halo, light/dark selon le thème système), header wordmark +
+plat blanc/noir selon le thème système, header wordmark +
 localisation, barre de recherche en verre, section "En cours près de vous" (cartes
 horizontales avec badge compte à rebours en temps réel : point vert pulsant + minutes
 restantes, calculées depuis happy_hours), section "Ce soir" (événements). Données via
@@ -325,8 +428,9 @@ préférences, déconnexion) accessible depuis le header.
 Passe de qualité sur tout le MVP : états vides et loading (skeletons en verre), gestion
 d'erreurs réseau, pull-to-refresh, animations d'entrée des cartes (fade + translateY,
 respecter prefers-reduced-motion), audit accessibilité (contrastes AA, labels, cibles
-44px), audit visuel contre la section 6 (aucun blanc pur, aucun gris froid, un seul CTA
-plein par écran), README avec instructions de lancement, et vérifie que web + mobile
+44px), audit visuel contre la section 7 (police système partout, un seul CTA doré
+plein par écran, jamais deux couleurs d'accent sur un même écran), README avec
+instructions de lancement, et vérifie que web + mobile
 buildent sans erreur.
 ```
 
@@ -334,11 +438,11 @@ buildent sans erreur.
 
 ---
 
-# 10. RÈGLES POUR CLAUDE CODE
+# 11. RÈGLES POUR CLAUDE CODE
 
 - TypeScript strict partout. Pas de `any`.
 - Tous les textes UI en français, devise QAR.
 - Toujours utiliser les design tokens de packages/ui — jamais de couleurs en dur dans les écrans.
-- Respecter le design system section 6 à la lettre : c'est l'identité du produit.
+- Respecter le design system section 7 à la lettre : c'est l'identité du produit.
 - Commits atomiques avec messages clairs à chaque étape terminée.
 - Ne jamais commiter de clés/secrets : utiliser .env + .env.example.
