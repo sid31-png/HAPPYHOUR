@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Liquid-glass surface treatment, mirrored verbatim from the Golden Hour
+ * tokens in packages/ui/src/tokens.ts (`glass.light` / `glass.dark`). These
+ * two rgba pairs are not expressed as Tailwind color utilities in the shared
+ * preset (packages/ui/src/tailwind-preset.js only exposes the inset-highlight
+ * box-shadows as `shadow-glass-light` / `shadow-glass-dark`), and this app is
+ * scoped to apps/web only, so the fill + border values live here instead of
+ * being added to the shared package.
+ */
+@layer components {
+  .glass {
+    background: rgba(255, 251, 244, 0.42);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(26px) saturate(170%);
+    -webkit-backdrop-filter: blur(26px) saturate(170%);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .glass {
+    background: rgba(255, 240, 220, 0.08);
+    border-color: rgba(255, 220, 180, 0.18);
+  }
+}
+
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.18);
+  }
+}
+
+.live-dot {
+  animation: live-pulse 1.6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot {
+    animation: none;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+body {
+  min-height: 100vh;
+}

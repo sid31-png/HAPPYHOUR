@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "Happy Hour",
+    "slug": "happyhour",
+    "scheme": "happyhour",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#EE8C4E"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.happyhour.mobile",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Happy Hour utilise votre position pour vous montrer les happy hours et lieux les plus proches de vous.",
+        "UIBackgroundModes": []
+      }
+    },
+    "android": {
+      "package": "app.happyhour.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png",
+        "backgroundColor": "#EE8C4E"
+      },
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-splash-screen",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Happy Hour utilise votre position pour vous montrer les happy hours et lieux les plus proches de vous."
+        }
+      ],
+      "expo-apple-authentication"
+    ]
+  }
+}

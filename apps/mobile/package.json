@@ -1,0 +1,49 @@
+{
+  "name": "@happyhour/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "dev": "expo start",
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "build": "echo 'Expo apps are built via EAS Build, not tsc' && exit 0",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@expo-google-fonts/alegreya-sans": "^0.4.1",
+    "@expo-google-fonts/hanken-grotesk": "^0.4.3",
+    "@expo/vector-icons": "^15.1.1",
+    "@happyhour/api": "*",
+    "@happyhour/types": "*",
+    "@happyhour/ui": "*",
+    "@react-native-async-storage/async-storage": "3.1.1",
+    "@supabase/supabase-js": "^2.45.4",
+    "expo": "~57.0.2",
+    "expo-apple-authentication": "~57.0.0",
+    "expo-blur": "~57.0.0",
+    "expo-constants": "~57.0.3",
+    "expo-font": "~57.0.0",
+    "expo-linear-gradient": "~57.0.0",
+    "expo-linking": "~57.0.1",
+    "expo-location": "~57.0.2",
+    "expo-router": "~57.0.3",
+    "expo-splash-screen": "~57.0.2",
+    "expo-status-bar": "~57.0.0",
+    "expo-system-ui": "~57.0.0",
+    "react": "19.2.3",
+    "react-native": "0.86.0",
+    "react-native-gesture-handler": "~3.0.2",
+    "react-native-maps": "1.29.0",
+    "react-native-reanimated": "~4.5.1",
+    "react-native-safe-area-context": "~5.8.0",
+    "react-native-screens": "~4.25.2"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "typescript": "^5.6.3"
+  }
+}

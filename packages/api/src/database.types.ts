@@ -13,6 +13,7 @@ export interface Database {
         };
         Insert: Partial<Database["public"]["Tables"]["profiles"]["Row"]> & { id: string };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Row"]>;
+        Relationships: [];
       };
       venues: {
         Row: {
@@ -32,6 +33,7 @@ export interface Database {
         };
         Insert: Partial<Database["public"]["Tables"]["venues"]["Row"]>;
         Update: Partial<Database["public"]["Tables"]["venues"]["Row"]>;
+        Relationships: [];
       };
       happy_hours: {
         Row: {
@@ -46,6 +48,15 @@ export interface Database {
         };
         Insert: Partial<Database["public"]["Tables"]["happy_hours"]["Row"]>;
         Update: Partial<Database["public"]["Tables"]["happy_hours"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "happy_hours_venue_id_fkey";
+            columns: ["venue_id"];
+            isOneToOne: false;
+            referencedRelation: "venues";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       events: {
         Row: {
@@ -62,11 +73,21 @@ export interface Database {
         };
         Insert: Partial<Database["public"]["Tables"]["events"]["Row"]>;
         Update: Partial<Database["public"]["Tables"]["events"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "events_venue_id_fkey";
+            columns: ["venue_id"];
+            isOneToOne: false;
+            referencedRelation: "venues";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       favorites: {
         Row: { user_id: string; venue_id: string; created_at: string };
         Insert: { user_id: string; venue_id: string; created_at?: string };
         Update: Partial<Database["public"]["Tables"]["favorites"]["Row"]>;
+        Relationships: [];
       };
       bookings: {
         Row: {
@@ -84,6 +105,7 @@ export interface Database {
         };
         Insert: Partial<Database["public"]["Tables"]["bookings"]["Row"]>;
         Update: Partial<Database["public"]["Tables"]["bookings"]["Row"]>;
+        Relationships: [];
       };
       subscriptions: {
         Row: {
@@ -95,11 +117,13 @@ export interface Database {
         };
         Insert: Partial<Database["public"]["Tables"]["subscriptions"]["Row"]>;
         Update: Partial<Database["public"]["Tables"]["subscriptions"]["Row"]>;
+        Relationships: [];
       };
       waitlist: {
         Row: { id: string; email: string; created_at: string };
         Insert: { id?: string; email: string; created_at?: string };
         Update: Partial<Database["public"]["Tables"]["waitlist"]["Row"]>;
+        Relationships: [];
       };
       partner_leads: {
         Row: {
@@ -116,7 +140,10 @@ export interface Database {
           email: string;
         };
         Update: Partial<Database["public"]["Tables"]["partner_leads"]["Row"]>;
+        Relationships: [];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
   };
 }
