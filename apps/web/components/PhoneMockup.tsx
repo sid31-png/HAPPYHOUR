@@ -19,12 +19,7 @@ export function PhoneMockup() {
       >
         <div className="absolute left-1/2 top-3 h-1.5 w-14 -translate-x-1/2 rounded-pill bg-textDark/40" />
 
-        <div className="relative overflow-hidden rounded-[30px] bg-sky-light dark:bg-sky-dark">
-          <div
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_22%,theme(colors.textDark/85%),theme(colors.amberLight/50%)_32%,transparent_72%)] dark:bg-[radial-gradient(circle_at_50%_60%,theme(colors.textDark/45%),theme(colors.sunset/40%)_32%,transparent_72%)]"
-            aria-hidden
-          />
-
+        <div className="relative overflow-hidden rounded-[30px] bg-white dark:bg-black">
           <div className="relative flex flex-col gap-3 p-4 pt-8">
             <div className="flex items-center justify-between">
               <span className="font-heading text-[15px] font-extrabold text-textLight dark:text-textDark">

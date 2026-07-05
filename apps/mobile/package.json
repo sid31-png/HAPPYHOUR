@@ -14,8 +14,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@expo-google-fonts/alegreya-sans": "^0.4.1",
-    "@expo-google-fonts/hanken-grotesk": "^0.4.3",
     "@expo/vector-icons": "^15.1.1",
     "@happyhour/api": "*",
     "@happyhour/types": "*",

@@ -1,20 +1,5 @@
 import type { Metadata } from "next";
-import { Alegreya_Sans, Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
-
-const alegreyaSans = Alegreya_Sans({
-  subsets: ["latin"],
-  weight: ["500", "700", "800"],
-  variable: "--font-alegreya",
-  display: "swap",
-});
-
-const hankenGrotesk = Hanken_Grotesk({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-hanken",
-  display: "swap",
-});
 
 const title = "Happy Hour — Trouvez votre prochain happy hour à Doha";
 const description =
@@ -43,8 +28,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" className={`${alegreyaSans.variable} ${hankenGrotesk.variable}`}>
-      <body className="min-h-screen bg-sky-light bg-fixed bg-cover text-textLight antialiased dark:bg-sky-dark dark:text-textDark font-body">
+    <html lang="fr">
+      <body className="min-h-screen bg-white text-textLight antialiased dark:bg-black dark:text-textDark font-body">
         {children}
       </body>
     </html>

@@ -48,7 +48,7 @@ export default function SignInScreen() {
         <GlassSurface shape="pill" style={styles.inputWrapper}>
           <TextInput
             placeholder="vous@exemple.com"
-            placeholderTextColor="rgba(120,90,60,0.6)"
+            placeholderTextColor="rgba(120,120,128,0.5)"
             autoCapitalize="none"
             keyboardType="email-address"
             value={email}
@@ -59,7 +59,7 @@ export default function SignInScreen() {
         <GlassSurface shape="pill" style={styles.inputWrapper}>
           <TextInput
             placeholder="Mot de passe"
-            placeholderTextColor="rgba(120,90,60,0.6)"
+            placeholderTextColor="rgba(120,120,128,0.5)"
             secureTextEntry
             value={password}
             onChangeText={setPassword}

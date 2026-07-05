@@ -4,11 +4,6 @@ import { PhoneMockup } from "./PhoneMockup";
 export function Hero() {
   return (
     <section className="relative isolate flex min-h-screen items-center overflow-hidden px-6 pb-16 pt-28 sm:px-10">
-      <div
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_26%,theme(colors.textDark/90%),theme(colors.amberLight/55%)_30%,transparent_70%)] dark:bg-[radial-gradient(circle_at_50%_58%,theme(colors.textDark/55%),theme(colors.sunset/45%)_30%,transparent_70%)]"
-        aria-hidden
-      />
-
       <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-16 lg:grid-cols-2">
         <div className="flex flex-col items-center gap-6 text-center lg:items-start lg:text-left">
           <h1 className="font-heading text-5xl font-extrabold leading-tight text-textLight dark:text-textDark sm:text-6xl lg:text-7xl">
